@@ -38,6 +38,7 @@ class ConfigurationViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        loadDumyData()
         startAvoidingKeyboard()
         viewModel.load()
     }
@@ -64,7 +65,12 @@ class ConfigurationViewController: UIViewController {
     @IBAction func syncApplePayMerchantIdField(sender: UITextField) {
         viewModel.applePayMerchantID = applePayMerchantIdField?.text
     }
-    
+
+    func loadDumyData(){
+        self.merchantIdField?.text = "TEST222205234001"
+        self.merchantServerUrlField?.text = "https://ap-gateway.mastercard.com/api/rest/version/53/merchant"
+    }
+
     func renderViewModel() {
         merchantIdField?.text = viewModel.merchantId
         regionButton?.setTitle(viewModel.region.name, for: .normal)

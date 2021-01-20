@@ -92,7 +92,7 @@ class ProcessPaymentViewController: UIViewController {
     /// Called to configure the view controller with the gateway and merchant service information.
     func configure(merchantId: String, region: GatewayRegion, merchantServiceURL: URL, applePayMerchantIdentifier: String?) {
         gateway = Gateway(region: region, merchantId: merchantId)
-        merchantAPI = MerchantAPI(url: merchantServiceURL)
+        merchantAPI = MerchantAPI(merchantId:merchantId,url: merchantServiceURL)
         transaction.applePayMerchantIdentifier = applePayMerchantIdentifier
     }
     
@@ -130,16 +130,16 @@ extension ProcessPaymentViewController {
                 // stop the activity indictor
                 self.createSessionActivityIndicator.stopAnimating()
                 guard case .success(let response) = result,
-                    "SUCCESS" == response[at: "gatewayResponse.result"] as? String,
-                    let session = response[at: "gatewayResponse.session.id"] as? String,
-                    let apiVersion = response[at: "apiVersion"] as? String else {
+                    "SUCCESS" == response[at: "result"] as? String,
+                    let session = response[at: "session.id"] as? String,
+                    let apiVersion = response[at: "session.version"] as? String else {
                         // if anything was missing, flag the step as having errored
                         self.stepErrored(message: "Error Creating Session", stepStatusImageView: self.createSessionStatusImageView)
                         return
                 }
                 
                 // The session was created successfully
-                self.transaction.session = GatewaySession(id: session, apiVersion: apiVersion)
+                self.transaction.session = GatewaySession(id: session, apiVersion: "53")
                 self.stepCompleted(stepStatusImageView: self.createSessionStatusImageView)
                 self.collectCardInfo()
             }
@@ -280,7 +280,7 @@ extension ProcessPaymentViewController {
     }
     
     func check3DSEnrollmentv47Handler(_ result: Result<GatewayMap>) {
-        guard case .success(let response) = result, let recommendaition = response[at: "gatewayResponse.response.gatewayRecommendation"] as? String else {
+        guard case .success(let response) = result, let recommendaition = response[at: "response.gatewayRecommendation"] as? String else {
             self.stepErrored(message: "Error checking 3DS Enrollment", stepStatusImageView: self.check3dsStatusImageView)
             return
         }
@@ -291,7 +291,7 @@ extension ProcessPaymentViewController {
         }
         
         // if PROCEED in recommendation, and we have HTML for 3DS, perform 3DS
-        if let html = response[at: "gatewayResponse.3DSecure.authenticationRedirect.simple.htmlBodyContent"] as? String {
+        if let html = response[at: "3DSecure.authenticationRedirect.simple.htmlBodyContent"] as? String {
             self.begin3DSAuth(simple: html)
         } else {
             // if PROCEED in recommendation, but no HTML, finish the transaction without 3DS

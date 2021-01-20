@@ -35,15 +35,17 @@ class MerchantAPI {
     
     let merchantServerURL: URL
     let urlSession: URLSession
+    let merchantId: String
     lazy var decoder: JSONDecoder = JSONDecoder()
     
-    init(url: URL, urlSession: URLSession = .shared) {
+    init(merchantId: String,url: URL, urlSession: URLSession = .shared) {
         self.merchantServerURL = url
         self.urlSession = urlSession
+        self.merchantId = merchantId
     }
     
     func createSession(completion: @escaping (Result<GatewayMap>) -> Void) {
-        issueRequest(path: "session.php", method: "POST", completion: completion)
+        issueRequest(path: "session", method: "POST", withAuthHeader: true, completion: completion)
     }
     
     func check3DSEnrollment(transaction: Transaction, redirectURL: String, completion: @escaping (Result<GatewayMap>) -> Void) {
@@ -53,9 +55,8 @@ class MerchantAPI {
         payload[at: "session.id"] = transaction.session?.id
         payload[at: "3DSecure.authenticationRedirect.responseUrl"] = redirectURL
         
-        let query = [URLQueryItem(name: "3DSecureId", value: transaction.threeDSecureId)]
-        
-        issueRequest(path: "3DSecure.php", method: "PUT", query: query, body: payload, completion: completion)
+
+        issueRequest(path: "3DSecureId/\(transaction.threeDSecureId ?? "")", method: "Put", body: payload, withAuthHeader: true, completion: completion)
     }
     
     func completeSession(transaction: Transaction, completion: @escaping (Result<GatewayMap>) -> Void) {
@@ -74,17 +75,24 @@ class MerchantAPI {
         }
         
         let query = [URLQueryItem(name: "order", value: transaction.orderId), URLQueryItem(name: "transaction", value: transaction.id)]
-        issueRequest(path: "transaction.php", method: "PUT", query: query, body: payload, completion: completion)
-        
+        issueRequest(path: "transaction", method: "PUT", query: query, body: payload, withAuthHeader: true, completion: completion)
+
     }
     
-    fileprivate func issueRequest(path: String, method: String, query: [URLQueryItem]? = nil, body: GatewayMap? = nil, completion: @escaping (Result<GatewayMap>) -> Void) {
+    fileprivate func issueRequest(path: String, method: String, query: [URLQueryItem]? = nil, body: GatewayMap? = nil, withAuthHeader: Bool, completion: @escaping (Result<GatewayMap>) -> Void) {
         var completeURLComp = URLComponents(url: merchantServerURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
         completeURLComp.queryItems = query
         var request = URLRequest(url: completeURLComp.url!)
         
         request.httpMethod = method
-        
+        if withAuthHeader {
+            // set the custom headers
+            var headers: [String: String] = [:]
+            headers["Authorization"] = "Basic bWVyY2hhbnQuVEVTVDIyMjIwNTIzNDAwMTo4ZWRlYzA3MzFmNjYyOGVkNGUyNTViY2I1MmFkYTQwNQ=="
+            for (key, value) in headers {
+                request.setValue(value, forHTTPHeaderField: key)
+            }
+        }
         if let body = body {
             let encoder = JSONEncoder()
             request.httpBody = try? encoder.encode(body)
