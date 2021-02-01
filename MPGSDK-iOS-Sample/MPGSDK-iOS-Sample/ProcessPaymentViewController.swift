@@ -236,7 +236,8 @@ extension ProcessPaymentViewController {
         check3dsActivityIndicator.startAnimating()
         
         // A redirect URL for 3D Secure that will redirect the browser back to a page on our merchant service after 3D Secure authentication
-        let redirectURL = merchantAPI.merchantServerURL.absoluteString.appending("/3DSecureResult.php?3DSecureId=\(transaction.threeDSecureId!)")
+       // let redirectURL = merchantAPI.merchantServerURL.absoluteString.appending("/3DSecureResult.php?3DSecureId=\(transaction.threeDSecureId!)")
+        let redirectURL = "https://toters-areeba-integration-2.herokuapp.com/3DSecureResult.php?3DSecureId=\(transaction.threeDSecureId!)"
         // check enrollment
         merchantAPI.check3DSEnrollment(transaction: transaction, redirectURL: redirectURL , completion: check3DSEnrollmentHandler)
     }
